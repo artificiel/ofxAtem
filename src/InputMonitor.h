@@ -58,16 +58,23 @@ class Controller;
             }
         }
         
-    protected:
-        ~InputMonitor();
+        auto getConnection() {
+//            mInput->
+        }
         
     public:
+        ~InputMonitor();
+        
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
         ULONG STDMETHODCALLTYPE AddRef(void);
         ULONG STDMETHODCALLTYPE Release(void);
         //HRESULT PropertyChanged(BMDSwitcherInputPropertyId propertyId);
-        HRESULT Notify (BMDSwitcherInputEventType eventType) { return S_OK; };
-
+        HRESULT Notify (BMDSwitcherInputEventType eventType) {
+            printf( "notification\n") ;
+            return S_OK;
+            
+        };
+        
         IBMDSwitcherInput* input();
         
     private:

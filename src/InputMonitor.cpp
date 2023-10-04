@@ -10,6 +10,7 @@ static inline bool	operator== (const REFIID& iid1, const REFIID& iid2)
 
 using namespace ofxAtem;
 
+
 InputMonitor::InputMonitor(IBMDSwitcherInput* input, Controller* uiDelegate) : mInput(input), mUiDelegate(uiDelegate), mRefCount(1)
 {
 	mInput->AddRef();
@@ -36,7 +37,7 @@ HRESULT STDMETHODCALLTYPE InputMonitor::QueryInterface(REFIID iid, LPVOID *ppv)
 	
 	if (CFEqual(&iid, IUnknownUUID))
 	{
-		*ppv = static_cast<IUnknown*>(this);
+		*ppv = static_cast<IBMDSwitcherInputCallback*>(this);
 		AddRef();
 		return S_OK;
 	}
