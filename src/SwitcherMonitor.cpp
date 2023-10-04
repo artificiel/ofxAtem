@@ -49,6 +49,11 @@ ULONG STDMETHODCALLTYPE SwitcherMonitor::Release(void)
 }
 
 HRESULT STDMETHODCALLTYPE SwitcherMonitor::Notify (BMDSwitcherEventType eventType,  BMDSwitcherVideoMode coreVideoMode) {
+    if (eventType != bmdSwitcherEventTypeTimeCodeChanged) {
+        printf(getEventTypeName(eventType).c_str());
+        printf(" monitor notif\n");
+
+    }
     return S_OK;
 }
 
