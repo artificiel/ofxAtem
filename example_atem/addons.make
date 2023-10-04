@@ -1,1 +1,3 @@
 ofxAtem
+ofxFontStash
+ofxVectorGuiWidgets
