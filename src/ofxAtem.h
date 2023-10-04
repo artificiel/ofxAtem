@@ -51,6 +51,7 @@ namespace ofxAtem
         void setAux(int index, int id);
         
         auto getInputMonitors() const { return mInputMonitors; }
+        auto getAuxOutputs() const {return auxoutputs; }
         
     protected:
         void init();
@@ -69,7 +70,7 @@ namespace ofxAtem
         IBMDSwitcherMixEffectBlock*	mMixEffectBlock;
 
         SwitcherMonitor*			mSwitcherMonitor;
-        std::vector<InputMonitor*>	mInputMonitors;
+        std::vector<std::shared_ptr<InputMonitor>>	mInputMonitors;
         std::vector<IBMDSwitcherInputAux*>	mSwitcherInputAuxList;
         std::vector<BMDSwitcherInputId*>	mInputIds;
         

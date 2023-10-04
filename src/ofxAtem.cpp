@@ -140,7 +140,7 @@ namespace ofxAtem
                     BMDSwitcherInputId id;
                     while (S_OK == inputIterator->Next(&input))
                     {
-                        InputMonitor* inputMonitor = new InputMonitor(input, this);
+                        auto inputMonitor = make_shared<InputMonitor>(input, this);
                         IBMDSwitcherInputAux* auxObj;
                         result = input->QueryInterface(IID_IBMDSwitcherInputAux, (void**)&auxObj);
                         input->GetInputId(&id);
@@ -149,6 +149,7 @@ namespace ofxAtem
                             BMDSwitcherInputId auxId;
                             result = auxObj->GetInputSource(&auxId);
                             mSwitcherInputAuxList.push_back(auxObj);
+                            ofLogNotice("Something here");
                         }
                         input->Release();
                         mInputMonitors.push_back(inputMonitor);
@@ -238,7 +239,8 @@ namespace ofxAtem
         auxoutputs.resize(mSwitcherInputAuxList.size());
         int idx = 0;
         for (auto & s : mSwitcherInputAuxList) {
-            s->GetInputSource(&auxoutputs[idx++]);
+            s->GetInputSource(&auxoutputs[idx]);
+            idx++;
         }
     }
     
@@ -309,6 +311,7 @@ namespace ofxAtem
     
     void Controller::setAux(int index, int id)
     {
+        ofLogNotice("set aux") << index << " = " << id;
         if (index >= 0 && index < auxoutputs.size()) {
             mSwitcherInputAuxList[index]->SetInputSource(id);
         }
