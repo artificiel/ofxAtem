@@ -1,3 +1,5 @@
 ofxAtem
 ofxFontStash
+ofxMQTT
+ofxOsc
 ofxVectorGuiWidgets
