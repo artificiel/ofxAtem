@@ -2,6 +2,7 @@
 #include "ofxAtem.h"
 #include "ofxVectorGuiWidgets.hpp"
 #include "ofxFontStash.h"
+#include "ofxOscReceiver.h"
 
 using namespace std::string_literals;
 
@@ -49,8 +50,10 @@ public:
     }
 };
 
+class ofApp;
 class ThreadedAtemController : public ofxAtem::Controller, public ofThread {
     
+	friend ofApp;
     std::string ip_;
     ofThreadChannel<bool> fresh_model_;
 
@@ -142,20 +145,20 @@ public:
 class ofApp : public ofBaseApp{
     
     ofxFontStash  matrix_font_;
+	ofxOscReceiver osc_receiver_{5000};
     
-	std::vector<std::string> desired_inputs_ = {
-		"Black",
-		"Dactylo",
-		"Ile",
-		"Cam PTZ",
-		"Cam Stand",
-		"Cam Top",
-		"Cam Top",
-		"Linux FX",
-		"Linux PRE",
-		"Mac",
-		"Color Bars",
-		"Color 1",
+	std::map<std::string, ofColor> desired_inputs_ = {
+		{"Black", ofColor(60,60,60)},
+		{"Dactylo", ofColor(150,0,150)},
+		{"Ile", ofColor(0,128,0)},
+		{"Cam PTZ", ofColor(255,100,200)},
+		{"Cam Stand", ofColor(255,255,20)},
+		{"Cam Top", ofColor(255,100,200)},
+		{"Linux FX", ofColor(0,100,255)},
+		{"Linux PRE", ofColor(0,50,180)},
+		{"Mac", ofColor(255,50,0)},
+		{"Color Bars", ofColor(255,50,50)},
+		{"Color 1", ofColor(0,50,100)}
 	};
 	
 	std::vector<std::string> desired_outputs_ = {
@@ -182,6 +185,7 @@ public:
         ofEnableAlphaBlending();
         ofSetVerticalSync(true);
         ofSetFrameRate(60);
+		
         matrix_font_.setup("fonts/Roboto-Medium.ttf", 1.0, 1024, false, 8, 2.0);
         matrix_font_.setSize(16);
 //        matrix_font_.setup("fonts/noto-sans/NotoSans-Regular.ttf", 1.0, 1024, false, 8, 1.5);
@@ -192,6 +196,12 @@ public:
     float longuest_input_ = 0;
     float longuest_output_ = 0;
     void update() {
+		
+		while (auto m = osc_receiver_.getMessage()) {
+			if (m->getAddress() == "/output") {
+				atem.mSwitcherInputAuxList[m->getArgAsInt(0)]->SetInputSource(m->getArgAsInt(1));
+			}
+		}
         
         if (text_overlay_.getWidth() != ofGetWidth()) {
             text_overlay_.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
@@ -203,16 +213,23 @@ public:
             longuest_input_ = 0;
             for (const auto & i: atem.inputs_) {
                 if (auto input = i.lock()) {
-                    auto w =matrix_font_.stringWidth(input->getName()) ;
-                    ofLogNotice("s") << w;
-                    if (w > longuest_input_) longuest_input_ = w;
+					if (desired_inputs_.count(input->getName())) {
+	
+						auto w =matrix_font_.stringWidth(input->getName()) ;
+						if (w > longuest_input_) longuest_input_ = w;
+					}
                 }
             }
             longuest_output_ = 0;
             for (const auto & output: atem.outputs_) {
-                auto w =matrix_font_.stringWidth(output->get_name()) ;;
-                if (w > longuest_output_) longuest_output_ = w;
+				if (ofContains(desired_outputs_, output->get_name())) {
+	
+					auto w =matrix_font_.stringWidth(output->get_name()) ;;
+					if (w > longuest_output_) longuest_output_ = w;
+				}
             }
+			ofSetWindowMinimumSize(longuest_output_+desired_inputs_.size()*20, longuest_input_+desired_outputs_.size()*20);
+//			ofSetWindowAspectRatio(4,3);
         }
         
         // should be on notification only but cannot figure it out
@@ -241,79 +258,14 @@ public:
     }
     void draw()
     {
-        ofClear(0);
-        
-        
-        if (0) {
-            if (!atem.isConnected()) {
-                ofDrawBitmapStringHighlight("NOT CONNECTED @ " + atem.getIP(), 10, 20);
-            } else {
-                ofPushStyle();
-                ofSetColor(0, 255, 0);
-                ofDrawBitmapStringHighlight("CONNECTED @ " + atem.getIP(), 10, 20);
-                ofPopStyle();
-            }
-            ofDrawBitmapStringHighlight(atem.getProductName(), 10, 20);
-            ofDrawBitmapStringHighlight(atem.getVideoModeString(), 10, 40);
-            
-            ofDrawBitmapStringHighlight("Program : " + ofToString(atem.getProgramId()), 10, 60);
-            ofDrawBitmapStringHighlight("Preview : " + ofToString(atem.getPreviewId()), 10, 80);
-            
-            ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 100);
-            
-            
-            ofPushMatrix();
-            ofTranslate(ofGetWidth()-300,200);
-            for (size_t i=0; i < atem.getAuxOutputs().size(); i++) {
-                
-                ofDrawBitmapString(ofToString(i) + " : " + ofToString(atem.getAux(i)), 10, 80);
-                //            ofDrawBitmapString(atem.getInputMonitors()[atem.getAux(i)]->getName(), 100, 80);
-                
-                ofTranslate(0,10);
-            }
-            ofPopMatrix();
-        }
+        ofBackground(0);
         
         if (atem.updating_.try_lock()) {
-//            text_overlay_.begin();
-//            ofClear(0,0,200,0);
-            if (0) {
-                ofPushMatrix();
-                ofTranslate(300,10);
-                
-                for (const auto & i: atem.inputs_) {
-                    if (auto input = i.lock()) {
-                        
-                        ofDrawBitmapString(input->getName(), 0, 0);
-                        try {
-                            ofDrawBitmapString(input->getPortTypeName(), 100, 0);
-                        } catch (...) {
-                            ofDrawBitmapString("unknown type", 100, 0);
-                        }
-                        ofTranslate(0,10);
-                    }
-                }
-                ofPopMatrix();
-                ofPushMatrix();
-                ofTranslate(600,0);
-                for (const auto & output: atem.outputs_) {
-                    
-                    ofDrawBitmapString(output->get_name(), 0, 0);
-                    try {
-                        ofDrawBitmapString(output->getPortTypeName(), 100, 0);
-                    } catch (...) {
-                        ofDrawBitmapString("unknown type", 100, 0);
-                    }
-                    ofTranslate(0,10);
-                    
-                }
-                ofPopMatrix();
-            }
         
 			std::vector<std::weak_ptr<ofxAtem::InputMonitor>> desired_inputs;
 			for (const auto & input: atem.inputs_) {
 				if (auto i = input.lock()) {
-					if (ofContains(desired_inputs_, i->getName())) desired_inputs.push_back(input);
+					if (desired_inputs_.count(i->getName())) desired_inputs.push_back(input);
 				}
 			}
 			
@@ -322,9 +274,14 @@ public:
 				if (ofContains(desired_outputs_, output->get_name())) desired_outputs.push_back(output);
 			}
 			
-            auto canvas_w = ofGetWidth() - longuest_output_ - 20;
-            auto w = canvas_w / desired_inputs.size();
-            
+			auto canvas_w = ofGetWidth() - longuest_output_ - 20;
+			auto w = canvas_w / desired_inputs.size();
+			
+			auto canvas_h = ofGetHeight() - longuest_input_ - 20;
+			auto h = canvas_h / desired_outputs_.size();
+			
+			if (h < w) w = h;
+			
             ofPushMatrix();
             ofTranslate(0.5, 0.5);
             ofTranslate(10, ofGetHeight()-(w*desired_outputs.size())-10);
@@ -335,7 +292,7 @@ public:
 					ofPushMatrix();
 					for (const auto & ass: output->assignements_) {
 						if (auto input = ass->get_assigned_input().lock()) {
-							if (ofContains(desired_inputs_, input->getName())) {
+							if (desired_inputs_.count(input->getName())) {
 								
 								if (first_line) {
 									ofPushMatrix();
@@ -345,7 +302,24 @@ public:
 									matrix_font_.drawString(input->getName(), 0,0);
 									ofPopMatrix();
 								}
+								ass->set_active_color(desired_inputs_[input->getName()]);
 								ass->draw(1,1,w-2,w-2);
+								if (ass->value_) {
+									ofPushMatrix();
+//									ofTranslate(-w/4, w/6);
+									ofSetColor(ofColor::black);
+									ofDrawLine(w * .5, w / 2, w * .5, w * .25);
+									ofDrawLine(w * .8, w / 2, w * .5, w * .5);
+									ofDrawLine(w * .8, w / 2, w * .7, w * .4);
+									ofDrawLine(w * .8, w / 2, w * .7, w * .6);
+									ofTranslate(2, 1);
+									ofSetColor(ofColor::white);
+									ofDrawLine(w * .5, w / 2, w * .5, w * .25);
+									ofDrawLine(w * .8, w / 2, w * .5, w * .5);
+									ofDrawLine(w * .8, w / 2, w * .7, w * .4);
+									ofDrawLine(w * .8, w / 2, w * .7, w * .6);
+									ofPopMatrix();
+								}
 								ofTranslate(w,0);
 							} else {
 							}
