@@ -152,7 +152,7 @@ class ofApp : public ofBaseApp{
 		{"Dactylo", ofColor(150,0,150)},
 		{"Ile", ofColor(0,128,0)},
 		{"Cam PTZ", ofColor(255,100,200)},
-		{"Cam Stand", ofColor(255,255,20)},
+		{"Cam Stand", ofColor(255,100,200)},
 		{"Cam Top", ofColor(255,100,200)},
 		{"Linux FX", ofColor(0,100,255)},
 		{"Linux PRE", ofColor(0,50,180)},
